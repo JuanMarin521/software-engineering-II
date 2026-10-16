@@ -1,0 +1,746 @@
+{
+ "cases": [
+  {
+   "id": "CE-01",
+   "k": "n_none",
+   "hu": "HU-01",
+   "unidad": "AgenteBorde.normalizar",
+   "camino": "Guarda 1: crudo nulo",
+   "entrada": "crudo = None (RawValue)",
+   "esperado": "Retorna Lectura con valor None y calidad BAD_NULO; no lanza TypeError."
+  },
+  {
+   "id": "CE-02",
+   "k": "n_centinela",
+   "hu": "HU-01",
+   "unidad": "AgenteBorde.normalizar",
+   "camino": "Guarda 2: centinela de módulo analógico",
+   "entrada": "crudo = 32767 y crudo = -32768 (int)",
+   "esperado": "Retorna valor None y calidad BAD_DESBORDAMIENTO en ambos casos."
+  },
+  {
+   "id": "CE-03",
+   "k": "n_nonfinito",
+   "hu": "HU-01",
+   "unidad": "AgenteBorde.normalizar",
+   "camino": "Guarda 3: valor no finito",
+   "entrada": "crudo = float(\"nan\"), +inf, -inf",
+   "esperado": "Retorna valor None y calidad BAD_NO_FINITO; el NaN no se propaga hacia clasificar."
+  },
+  {
+   "id": "CE-04",
+   "k": "n_denormal",
+   "hu": "HU-01",
+   "unidad": "AgenteBorde.normalizar",
+   "camino": "Guarda 4: subnormal",
+   "entrada": "crudo = 2.39e-41 (float)",
+   "esperado": "Retorna valor None y calidad BAD_DENORMAL."
+  },
+  {
+   "id": "CE-05",
+   "k": "n_rango",
+   "hu": "HU-01",
+   "unidad": "AgenteBorde.normalizar",
+   "camino": "Guarda 5: fuera de rango físico",
+   "entrada": "crudo = -0.1 y 1e38 con rango 0,0 a 400,0",
+   "esperado": "Retorna valor None y calidad BAD_FUERA_RANGO en ambos casos."
+  },
+  {
+   "id": "CE-06",
+   "k": "n_ok",
+   "hu": "HU-01",
+   "unidad": "AgenteBorde.normalizar",
+   "camino": "Camino válido",
+   "entrada": "crudo = 87 (int) y 87.5 (float)",
+   "esperado": "Retorna calidad GOOD; type(valor) is float en ambos casos (el int se convierte)."
+  },
+  {
+   "id": "CE-07",
+   "k": "n_float32",
+   "hu": "HU-01",
+   "unidad": "AgenteBorde.normalizar",
+   "camino": "Redondeo a resolución",
+   "entrada": "crudo = struct float32 de 0,1 = 0.10000000149011612; resolucion = 3",
+   "esperado": "valor == 0.1 exacto; clasificar con umbral critico 0.1 retorna LEVE, no GRAVE."
+  },
+  {
+   "id": "CE-08",
+   "k": "n_modbus",
+   "hu": "HU-01",
+   "unidad": "ConectorModbusTCP.decodificar_registros",
+   "camino": "Orden de palabras",
+   "entrada": "regs = [0x42AE, 0x0000] y [0x0000, 0x42AE]",
+   "esperado": "El primero decodifica 87.0; el segundo 2.39e-41, que normalizar rechaza con BAD_DENORMAL."
+  },
+  {
+   "id": "CE-09",
+   "k": "r_retry",
+   "hu": "HU-01",
+   "unidad": "AgenteBorde.leer_con_reintentos",
+   "camino": "Timeout y recuperación",
+   "entrada": "mocker.patch.object(conector, \"leer\", side_effect=[TimeoutError, 87.5])",
+   "esperado": "Retorna 87.5; conector.leer.call_count == 2; no lanza excepción."
+  },
+  {
+   "id": "CE-10",
+   "k": "r_agota",
+   "hu": "HU-01",
+   "unidad": "AgenteBorde.leer_con_reintentos",
+   "camino": "Reintentos agotados",
+   "entrada": "side_effect=[TimeoutError] * 3",
+   "esperado": "Lanza SinComunicacionError; conector.leer.call_count == 3 exacto."
+  },
+  {
+   "id": "CE-11",
+   "k": "r_conn",
+   "hu": "HU-01",
+   "unidad": "AgenteBorde.leer_con_reintentos",
+   "camino": "Interrupción de conexión",
+   "entrada": "side_effect=[ConnectionResetError, 87.5]",
+   "esperado": "Retorna 87.5; conector.reconectar.call_count == 1."
+  },
+  {
+   "id": "CE-12",
+   "k": "c_mixto",
+   "hu": "HU-01",
+   "unidad": "AgenteBorde.ejecutar_ciclo",
+   "camino": "Una variable sin comunicación",
+   "entrada": "Dos variables; la primera agota reintentos",
+   "esperado": "Retorna list[Lectura] de 2 elementos: BAD_SIN_COMUNICACION con valor None y GOOD; el ciclo no lanza excepción."
+  },
+  {
+   "id": "CE-13",
+   "k": "e_buffer",
+   "hu": "HU-01",
+   "unidad": "AgenteBorde.enviar_lote",
+   "camino": "Backend caído",
+   "entrada": "IngestaController lanza ConnectError",
+   "esperado": "Retorna False; BufferLocal.guardar.call_count == 1 con el lote; al recuperarse, drenar() reenvía en orden con diferida == True."
+  },
+  {
+   "id": "CE-14",
+   "k": "k_none",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.clasificar",
+   "camino": "Lectura nula",
+   "entrada": "Lectura(valor=None)",
+   "esperado": "Lanza LecturaInvalidaError; no retorna Nivel."
+  },
+  {
+   "id": "CE-15",
+   "k": "k_nan",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.clasificar",
+   "camino": "Lectura NaN",
+   "entrada": "Lectura(valor=float(\"nan\"))",
+   "esperado": "Lanza LecturaInvalidaError; en ningún caso retorna Nivel.NORMAL."
+  },
+  {
+   "id": "CE-16",
+   "k": "k_inf",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.clasificar",
+   "camino": "Lectura infinita",
+   "entrada": "Lectura(valor=float(\"inf\"))",
+   "esperado": "Lanza LecturaInvalidaError."
+  },
+  {
+   "id": "CE-17",
+   "k": "k_adv",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.clasificar",
+   "camino": "Frontera de advertencia",
+   "entrada": "Umbral(225.0, 240.0); valor 224.9, 225.0 y math.nextafter(225.0, inf)",
+   "esperado": "NORMAL, NORMAL y LEVE respectivamente."
+  },
+  {
+   "id": "CE-18",
+   "k": "k_crit",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.clasificar",
+   "camino": "Frontera crítica",
+   "entrada": "Umbral(225.0, 240.0); valor 240.0 y math.nextafter(240.0, inf)",
+   "esperado": "LEVE y GRAVE respectivamente."
+  },
+  {
+   "id": "CE-19",
+   "k": "k_vib",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.clasificar",
+   "camino": "Umbrales de vibración",
+   "entrada": "Umbral(4.5, 7.1); valor 4.5, 4.6, 7.1 y 7.2",
+   "esperado": "NORMAL, LEVE, LEVE y GRAVE."
+  },
+  {
+   "id": "CE-20",
+   "k": "k_umbral",
+   "hu": "HU-01",
+   "unidad": "Umbral.__post_init__",
+   "camino": "Invariante de configuración",
+   "entrada": "Umbral(advertencia=240.0, critico=225.0)",
+   "esperado": "Lanza UmbralInvalidoError al construir; no existe un Umbral inconsistente en memoria."
+  },
+  {
+   "id": "CE-21",
+   "k": "u_inicio",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.actualizar_contador",
+   "camino": "Grave sin contador activo",
+   "entrada": "estado.inicio_grave_ns = None; nivel GRAVE; ahora_ns = T0",
+   "esperado": "Retorna un EstadoVariable nuevo con inicio_grave_ns == T0; el estado de entrada conserva None."
+  },
+  {
+   "id": "CE-22",
+   "k": "u_cont",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.actualizar_contador",
+   "camino": "Grave con contador activo",
+   "entrada": "inicio_grave_ns = T0; nivel GRAVE; ahora_ns = T0 + 10 * 10**9",
+   "esperado": "inicio_grave_ns sigue siendo T0 (no se reinicia)."
+  },
+  {
+   "id": "CE-23",
+   "k": "u_reset",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.actualizar_contador",
+   "camino": "Retorno a LEVE o NORMAL",
+   "entrada": "inicio_grave_ns = T0; nivel LEVE y luego NORMAL",
+   "esperado": "inicio_grave_ns is None en ambos casos."
+  },
+  {
+   "id": "CE-24",
+   "k": "u_reloj",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.actualizar_contador",
+   "camino": "Reloj retrocede",
+   "entrada": "ultima_lectura_ns = 5 * 10**9; ahora_ns = 4 * 10**9",
+   "esperado": "Lanza RelojInconsistenteError; el estado de entrada no cambia."
+  },
+  {
+   "id": "CE-25",
+   "k": "u_inter",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.actualizar_contador",
+   "camino": "Intermitencia",
+   "entrada": "20 s en GRAVE, 1 lectura NORMAL, 20 s en GRAVE (lecturas a 1 Hz)",
+   "esperado": "Tras la segunda racha, ahora_ns - inicio_grave_ns == 20 * 10**9; evaluar_parada retorna False."
+  },
+  {
+   "id": "CE-26",
+   "k": "p_base",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.evaluar_parada",
+   "camino": "MC/DC fila base (V,V,V,V)",
+   "entrada": "nivel GRAVE; inicio no nulo; ahora_ns - inicio_grave_ns == 30 * 10**9; es_vp True",
+   "esperado": "Retorna True (frontera inclusiva: >=)."
+  },
+  {
+   "id": "CE-27",
+   "k": "p_nivel",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.evaluar_parada",
+   "camino": "MC/DC condición 1",
+   "entrada": "Igual a la fila base pero nivel LEVE",
+   "esperado": "Retorna False."
+  },
+  {
+   "id": "CE-28",
+   "k": "p_inicio",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.evaluar_parada",
+   "camino": "MC/DC condición 2",
+   "entrada": "Igual a la fila base pero inicio_grave_ns = None",
+   "esperado": "Retorna False; no lanza TypeError al restar."
+  },
+  {
+   "id": "CE-29",
+   "k": "p_29",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.evaluar_parada",
+   "camino": "MC/DC condición 3 y frontera",
+   "entrada": "Duración 29_999_999_999 ns",
+   "esperado": "Retorna False."
+  },
+  {
+   "id": "CE-30",
+   "k": "p_vp",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.evaluar_parada",
+   "camino": "MC/DC condición 4",
+   "entrada": "Igual a la fila base pero es_vp False",
+   "esperado": "Retorna False."
+  },
+  {
+   "id": "CE-31",
+   "k": "p_mas",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.evaluar_parada",
+   "camino": "Frontera superior y magnitud",
+   "entrada": "Duración 30_000_000_001 ns y 10**15 ns",
+   "esperado": "Retorna True en ambos casos; la comparación entre int no desborda."
+  },
+  {
+   "id": "CE-32",
+   "k": "x_unica",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.procesar_lectura",
+   "camino": "Orden única",
+   "entrada": "31 lecturas GRAVE a 1 Hz (t = 0 a 30 s) y 9 más, con FakeReloj",
+   "esperado": "canal.emitir.call_count == 1; la emisión ocurre en la lectura 31; estado.orden_emitida == True."
+  },
+  {
+   "id": "CE-33",
+   "k": "x_orden",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.procesar_lectura",
+   "camino": "Parada antes de persistir",
+   "entrada": "Mocks adjuntados a un padre; ejecuta la lectura que completa 30 s",
+   "esperado": "El orden de padre.mock_calls es emitir y luego insertar."
+  },
+  {
+   "id": "CE-34",
+   "k": "x_canal",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.procesar_lectura",
+   "camino": "Falla del canal de comandos",
+   "entrada": "canal.emitir retorna False",
+   "esperado": "Se inserta EventoAlerta ORDEN_FALLIDA y se llama a notificar una vez."
+  },
+  {
+   "id": "CE-35",
+   "k": "x_dif",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.procesar_lectura",
+   "camino": "Lectura diferida",
+   "entrada": "Lectura(diferida=True) en nivel GRAVE",
+   "esperado": "insertar.call_count == 1; el estado de la variable no cambia; canal.emitir no se llama."
+  },
+  {
+   "id": "CE-36",
+   "k": "x_bd",
+   "hu": "HU-01",
+   "unidad": "MotorAlertas.procesar_lectura",
+   "camino": "Falla de persistencia",
+   "entrada": "repositorio.insertar lanza OperationalError tras emitir la orden",
+   "esperado": "La orden ya fue emitida; la excepción se captura; ResultadoProceso.error_persistencia == True."
+  },
+  {
+   "id": "CE-37",
+   "k": "a_ok",
+   "hu": "HU-02",
+   "unidad": "ServicioAutorizacion.puede_reconocer",
+   "camino": "Roles permitidos",
+   "entrada": "Rol.OPERARIO, Rol.SUPERVISOR, Rol.JEFE_MTTO",
+   "esperado": "Retorna True en los tres casos (parametrizado)."
+  },
+  {
+   "id": "CE-38",
+   "k": "a_no",
+   "hu": "HU-02",
+   "unidad": "ServicioAutorizacion.puede_reconocer",
+   "camino": "Roles no permitidos",
+   "entrada": "Rol.INSPECTOR, PLANEADOR, GERENTE, ADMIN",
+   "esperado": "Retorna False en los cuatro casos."
+  },
+  {
+   "id": "CE-39",
+   "k": "a_none",
+   "hu": "HU-02",
+   "unidad": "ServicioAutorizacion / Rol.desde_texto",
+   "camino": "Rol nulo o desconocido",
+   "entrada": "puede_reconocer(None); Rol.desde_texto(\"admin \")",
+   "esperado": "El primero retorna False; el segundo lanza RolDesconocidoError."
+  },
+  {
+   "id": "CE-40",
+   "k": "a_403",
+   "hu": "HU-02",
+   "unidad": "AlertasController.reconocer",
+   "camino": "Rol no autorizado",
+   "entrada": "usuario.rol = INSPECTOR",
+   "esperado": "Retorna RespuestaHTTP.status == 403; auditoria.registrar.call_count == 1; repositorio.consultar.assert_not_called()."
+  },
+  {
+   "id": "CE-41",
+   "k": "a_404",
+   "hu": "HU-02",
+   "unidad": "AlertasController.reconocer",
+   "camino": "Alerta inexistente",
+   "entrada": "Rol permitido; repositorio.consultar retorna []",
+   "esperado": "status == 404; repositorio.insertar.assert_not_called()."
+  },
+  {
+   "id": "CE-42",
+   "k": "a_409",
+   "hu": "HU-02",
+   "unidad": "AlertasController.reconocer",
+   "camino": "Alerta cerrada",
+   "entrada": "Último EventoAlerta.tipo == CERRADA",
+   "esperado": "status == 409; no se inserta ningún evento."
+  },
+  {
+   "id": "CE-43",
+   "k": "a_200",
+   "hu": "HU-02",
+   "unidad": "AlertasController.reconocer",
+   "camino": "Camino exitoso",
+   "entrada": "Rol SUPERVISOR; alerta LEVE abierta",
+   "esperado": "status == 200; se inserta un EventoAlerta RECONOCIDA con actor == usuario.id; el nivel de la alerta sigue LEVE y la alerta sigue abierta."
+  },
+  {
+   "id": "CE-44",
+   "k": "s_front",
+   "hu": "HU-02",
+   "unidad": "MotorAlertas.escalar_pendientes",
+   "camino": "Frontera de 10 min (estricta)",
+   "entrada": "Alerta LEVE sin reconocer con edad 599_999_999_999, 600_000_000_000 y 600_000_000_001 ns",
+   "esperado": "Retorna [], [] y 1 EventoAlerta ESCALADA respectivamente."
+  },
+  {
+   "id": "CE-45",
+   "k": "s_idem",
+   "hu": "HU-02",
+   "unidad": "MotorAlertas.escalar_pendientes",
+   "camino": "Alertas que no deben escalar",
+   "entrada": "LEVE reconocida de 12 min; GRAVE de 12 min",
+   "esperado": "Retorna [] en ambos casos (sin doble escalamiento)."
+  },
+  {
+   "id": "CE-46",
+   "k": "s_masa",
+   "hu": "HU-02",
+   "unidad": "MotorAlertas.escalar_pendientes",
+   "camino": "Vacía y masiva",
+   "entrada": "tuple() y una tupla de 10_000 alertas mixtas",
+   "esperado": "Retorna [] y exactamente las alertas elegibles; la tupla de entrada no se modifica; tiempo < 100 ms."
+  },
+  {
+   "id": "CE-47",
+   "k": "o_averia",
+   "hu": "HU-03",
+   "unidad": "ClasificadorParos.clasificar",
+   "camino": "TipoParo.AVERIA",
+   "entrada": "Paro(AVERIA, 1200, False)",
+   "esperado": "ClasificacionParo(DISPONIBILIDAD, requiere_validacion=False)."
+  },
+  {
+   "id": "CE-48",
+   "k": "o_cfprog",
+   "hu": "HU-03",
+   "unidad": "ClasificadorParos.clasificar",
+   "camino": "Cambio o aseo programado",
+   "entrada": "Paro(CAMBIO_FORMATO, 1800, True) y Paro(ASEO_LINEA, 900, True)",
+   "esperado": "ClasificacionParo(NINGUNA, False) en ambos casos."
+  },
+  {
+   "id": "CE-49",
+   "k": "o_cfno",
+   "hu": "HU-03",
+   "unidad": "ClasificadorParos.clasificar",
+   "camino": "Cambio o aseo no programado",
+   "entrada": "Paro(CAMBIO_FORMATO, 1800, False) y Paro(ASEO_LINEA, 900, False)",
+   "esperado": "ClasificacionParo(DISPONIBILIDAD, requiere_validacion=True) en ambos casos."
+  },
+  {
+   "id": "CE-50",
+   "k": "o_micro",
+   "hu": "HU-03",
+   "unidad": "ClasificadorParos.clasificar",
+   "camino": "Frontera de micro parada",
+   "entrada": "Paro(MICRO_PARADA, 299, False) y Paro(MICRO_PARADA, 300, False)",
+   "esperado": "RENDIMIENTO sin validación; y DISPONIBILIDAD con requiere_validacion=True."
+  },
+  {
+   "id": "CE-51",
+   "k": "o_desc",
+   "hu": "HU-03",
+   "unidad": "ClasificadorParos / Paro",
+   "camino": "Tipo desconocido y duración negativa",
+   "entrada": "tipo fuera del Enum; Paro(AVERIA, -1, False)",
+   "esperado": "Lanza TipoParoDesconocidoError y ParoInvalidoError (esta última al construir)."
+  },
+  {
+   "id": "CE-52",
+   "k": "o_disp",
+   "hu": "HU-03",
+   "unidad": "CalculadorOEE.calcular",
+   "camino": "Disponibilidad exacta",
+   "entrada": "planificado_s 28_800; paro_averia_s 1_200",
+   "esperado": "Disponibilidad == Fraction(23, 24) exacta, sin redondeo."
+  },
+  {
+   "id": "CE-53",
+   "k": "o_noplan",
+   "hu": "HU-03",
+   "unidad": "CalculadorOEE.calcular",
+   "camino": "Sin tiempo planificado",
+   "entrada": "planificado_s = 0",
+   "esperado": "ResultadoOEE(None, SIN_TIEMPO_PLANIFICADO); no lanza ZeroDivisionError."
+  },
+  {
+   "id": "CE-54",
+   "k": "o_noprod",
+   "hu": "HU-03",
+   "unidad": "CalculadorOEE.calcular",
+   "camino": "Sin producción",
+   "entrada": "operacion_real_s = 0 y, aparte, piezas_total = 0",
+   "esperado": "ResultadoOEE(Fraction(0), SIN_PRODUCCION) en ambos casos."
+  },
+  {
+   "id": "CE-55",
+   "k": "o_conf",
+   "hu": "HU-03",
+   "unidad": "CalculadorOEE.calcular",
+   "camino": "Conformes mayor que total",
+   "entrada": "piezas_total 100; piezas_conformes 101",
+   "esperado": "ResultadoOEE(None, FUERA_DE_RANGO)."
+  },
+  {
+   "id": "CE-56",
+   "k": "o_uno",
+   "hu": "HU-03",
+   "unidad": "CalculadorOEE.calcular",
+   "camino": "OEE exacto de 1",
+   "entrada": "planificado_s 28_800; paro 0; ciclo_ideal_s Decimal(\"2.0\"); piezas 14_400 todas conformes; operacion_real_s 28_800",
+   "esperado": "oee == Fraction(1, 1) y estado OK; sin falso FUERA_DE_RANGO por redondeo binario."
+  },
+  {
+   "id": "CE-57",
+   "k": "o_paro",
+   "hu": "HU-03",
+   "unidad": "CalculadorOEE.calcular",
+   "camino": "Paros mayores que el planificado",
+   "entrada": "planificado_s 28_800; paro_averia_s 30_000",
+   "esperado": "Disponibilidad negativa; ResultadoOEE(None, FUERA_DE_RANGO)."
+  },
+  {
+   "id": "CE-58",
+   "k": "o_delta",
+   "hu": "HU-03",
+   "unidad": "CalculadorOEE.delta_piezas",
+   "camino": "Desborde de contador de 16 bits",
+   "entrada": "actual = 5; anterior = 65_530; ancho_bits = 16",
+   "esperado": "Retorna 11 (aritmética módulo 2**16), no un valor negativo."
+  },
+  {
+   "id": "CE-59",
+   "k": "o_cal",
+   "hu": "HU-03",
+   "unidad": "CalculadorOEE / evaluar_calidad",
+   "camino": "Umbrales de calidad (RN006)",
+   "entrada": "Conformes/Total = 95/100, 949/1000, 90/100, 899/1000 (Fraction)",
+   "esperado": "Sin alerta, LEVE, LEVE y GRAVE con revisar_lote == True respectivamente."
+  },
+  {
+   "id": "CE-60",
+   "k": "o_efi",
+   "hu": "HU-03",
+   "unidad": "PlanificadorOEE.tick",
+   "camino": "Eficiencia (RN005)",
+   "entrada": "Eficiencia 79/100 con transcurrido 3 h, 4 h exactas y 5 h de un turno de 8 h; 80/100 a 3 h",
+   "esperado": "Alerta solo en el primer caso (79 %, 3 h); en 4 h exactas no hay alerta (comparación estricta)."
+  },
+  {
+   "id": "CE-61",
+   "k": "o_tick",
+   "hu": "HU-03",
+   "unidad": "PlanificadorOEE.tick",
+   "camino": "Alerta estratégica",
+   "entrada": "OEE Fraction(13, 20) y Fraction(649, 1000) antes de la mitad del turno",
+   "esperado": "Sin alerta con 13/20; alerta al gerente con 649/1000."
+  },
+  {
+   "id": "CE-62",
+   "k": "o_exc",
+   "hu": "HU-03",
+   "unidad": "PlanificadorOEE.tick",
+   "camino": "Aislamiento de fallas",
+   "entrada": "3 turnos; calcular lanza RuntimeError en el segundo",
+   "esperado": "calcular.call_count == 3; se registra el error del turno 2; retorna 2 resultados."
+  },
+  {
+   "id": "CE-63",
+   "k": "t_rol",
+   "hu": "HU-04",
+   "unidad": "GestorTurno.cerrar_turno",
+   "camino": "Rol no autorizado",
+   "entrada": "usuario.rol = OPERARIO",
+   "esperado": "Lanza PermisoDenegadoError; auditoria.registrar.call_count == 1; consolidar.assert_not_called()."
+  },
+  {
+   "id": "CE-64",
+   "k": "t_pend",
+   "hu": "HU-04",
+   "unidad": "GestorTurno.cerrar_turno",
+   "camino": "Alertas sin reconocer",
+   "entrada": "turno.alertas_sin_reconocer = 1",
+   "esperado": "Lanza CierreBloqueadoError(ALERTAS_PENDIENTES); turno.estado sigue ABIERTO."
+  },
+  {
+   "id": "CE-65",
+   "k": "t_ent",
+   "hu": "HU-04",
+   "unidad": "GestorTurno.cerrar_turno",
+   "camino": "Entrante sin confirmar",
+   "entrada": "alertas_sin_reconocer = 0; entrante_confirmado = False",
+   "esperado": "Lanza CierreBloqueadoError(ENTRANTE_SIN_CONFIRMAR)."
+  },
+  {
+   "id": "CE-66",
+   "k": "t_ok",
+   "hu": "HU-04",
+   "unidad": "GestorTurno.cerrar_turno",
+   "camino": "Camino exitoso",
+   "entrada": "Todas las compuertas superadas",
+   "esperado": "consolidar.call_count == 1; insertar.call_count == 1; turno.estado == CERRADO; notificar a PLANEADOR y GERENTE."
+  },
+  {
+   "id": "CE-67",
+   "k": "t_retry",
+   "hu": "HU-04",
+   "unidad": "GestorTurno.cerrar_turno",
+   "camino": "Falla y recuperación",
+   "entrada": "consolidar: side_effect=[ConsolidacionError, informe]",
+   "esperado": "consolidar.call_count == 2; turno.estado == CERRADO."
+  },
+  {
+   "id": "CE-68",
+   "k": "t_agota",
+   "hu": "HU-04",
+   "unidad": "GestorTurno.cerrar_turno",
+   "camino": "Reintentos agotados",
+   "entrada": "consolidar: side_effect=[ConsolidacionError] * 3",
+   "esperado": "consolidar.call_count == 3; lanza CierreBloqueadoError(CONSOLIDACION_FALLIDA); turno.estado == ABIERTO."
+  },
+  {
+   "id": "CE-69",
+   "k": "t_conc",
+   "hu": "HU-04",
+   "unidad": "GestorTurno.cerrar_turno",
+   "camino": "Cierres concurrentes",
+   "entrada": "2 hilos con el mismo turno_id",
+   "esperado": "Exactamente 1 InformeTurno insertado; el otro hilo lanza CierreBloqueadoError(TURNO_EN_CIERRE)."
+  },
+  {
+   "id": "CE-70",
+   "k": "h_403",
+   "hu": "HU-05",
+   "unidad": "HistorialController.rechazar_modificacion",
+   "camino": "Modificación manual",
+   "entrada": "DELETE, PUT y PATCH por cada Rol incluido ADMIN",
+   "esperado": "status == 403 en los 21 casos; auditoria.registrar con (usuario.id, método, DENEGADO); repositorio sin llamadas de escritura."
+  },
+  {
+   "id": "CE-71",
+   "k": "h_guard",
+   "hu": "HU-05",
+   "unidad": "RepositorioHistorico",
+   "camino": "Guardián de diseño",
+   "entrada": "Introspección de la clase y de sus adaptadores",
+   "esperado": "Ningún atributo público empieza por update, delete, remove o drop, salvo purgar_por_retencion."
+  },
+  {
+   "id": "CE-72",
+   "k": "h_frozen",
+   "hu": "HU-05",
+   "unidad": "RegistroInmutable",
+   "camino": "Inmutabilidad en memoria",
+   "entrada": "registro.tipo = \"x\" y registro.carga[\"k\"] = 1",
+   "esperado": "Lanza FrozenInstanceError y TypeError respectivamente."
+  },
+  {
+   "id": "CE-73",
+   "k": "h_purga",
+   "hu": "HU-05",
+   "unidad": "RepositorioHistorico.purgar_por_retencion",
+   "camino": "Única ruta de borrado",
+   "entrada": "token None; PoliticaRetencion(dias=0); PoliticaRetencion(dias=90) con token válido",
+   "esperado": "PermisoDenegadoError; PoliticaInvalidaError; y elimina solo filas con t_utc anterior a 90 días, retornando un int, con auditoría."
+  },
+  {
+   "id": "CE-74",
+   "k": "h_bd",
+   "hu": "HU-05",
+   "unidad": "PostgreSQL (integración)",
+   "camino": "Defensa en profundidad",
+   "entrada": "Rol de la aplicación ejecuta UPDATE y DELETE sobre evento_alerta",
+   "esperado": "El motor responde InsufficientPrivilege en ambas operaciones."
+  }
+ ],
+ "key": {
+  "n_none": "CE-01",
+  "n_centinela": "CE-02",
+  "n_nonfinito": "CE-03",
+  "n_denormal": "CE-04",
+  "n_rango": "CE-05",
+  "n_ok": "CE-06",
+  "n_float32": "CE-07",
+  "n_modbus": "CE-08",
+  "r_retry": "CE-09",
+  "r_agota": "CE-10",
+  "r_conn": "CE-11",
+  "c_mixto": "CE-12",
+  "e_buffer": "CE-13",
+  "k_none": "CE-14",
+  "k_nan": "CE-15",
+  "k_inf": "CE-16",
+  "k_adv": "CE-17",
+  "k_crit": "CE-18",
+  "k_vib": "CE-19",
+  "k_umbral": "CE-20",
+  "u_inicio": "CE-21",
+  "u_cont": "CE-22",
+  "u_reset": "CE-23",
+  "u_reloj": "CE-24",
+  "u_inter": "CE-25",
+  "p_base": "CE-26",
+  "p_nivel": "CE-27",
+  "p_inicio": "CE-28",
+  "p_29": "CE-29",
+  "p_vp": "CE-30",
+  "p_mas": "CE-31",
+  "x_unica": "CE-32",
+  "x_orden": "CE-33",
+  "x_canal": "CE-34",
+  "x_dif": "CE-35",
+  "x_bd": "CE-36",
+  "a_ok": "CE-37",
+  "a_no": "CE-38",
+  "a_none": "CE-39",
+  "a_403": "CE-40",
+  "a_404": "CE-41",
+  "a_409": "CE-42",
+  "a_200": "CE-43",
+  "s_front": "CE-44",
+  "s_idem": "CE-45",
+  "s_masa": "CE-46",
+  "o_averia": "CE-47",
+  "o_cfprog": "CE-48",
+  "o_cfno": "CE-49",
+  "o_micro": "CE-50",
+  "o_desc": "CE-51",
+  "o_disp": "CE-52",
+  "o_noplan": "CE-53",
+  "o_noprod": "CE-54",
+  "o_conf": "CE-55",
+  "o_uno": "CE-56",
+  "o_paro": "CE-57",
+  "o_delta": "CE-58",
+  "o_cal": "CE-59",
+  "o_efi": "CE-60",
+  "o_tick": "CE-61",
+  "o_exc": "CE-62",
+  "t_rol": "CE-63",
+  "t_pend": "CE-64",
+  "t_ent": "CE-65",
+  "t_ok": "CE-66",
+  "t_retry": "CE-67",
+  "t_agota": "CE-68",
+  "t_conc": "CE-69",
+  "h_403": "CE-70",
+  "h_guard": "CE-71",
+  "h_frozen": "CE-72",
+  "h_purga": "CE-73",
+  "h_bd": "CE-74"
+ }
+}
