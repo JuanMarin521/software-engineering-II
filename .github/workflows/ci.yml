@@ -1,0 +1,39 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  estatico:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -e ".[dev]"
+      - run: ruff check .
+      - run: mypy
+      - run: xenon --max-absolute B src/
+      - run: bandit -q -r src
+  pruebas:
+    needs: estatico
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -e ".[dev]"
+      - run: pytest -m "not integracion" --cov=gemelo --cov-branch --cov-report=
+      - run: coverage json -o coverage.json
+      - run: python scripts/verificar_cobertura_critica.py
+      - run: coverage report --fail-under=85
+  mutacion:
+    needs: pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -e ".[dev]"
+      - run: mutmut run
+      - run: mutmut results
