@@ -55,9 +55,6 @@ python scripts/generar_matriz_trazabilidad.py
 
 Si PowerShell bloquea `Activate.ps1`, ejecute una vez `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
 
-**Mutación (`mutmut run`)**: la herramienta no admite Windows nativo. Use WSL (Ubuntu), Linux o macOS; el pipeline de CI
-la ejecuta en Ubuntu. Verifique el resultado con `mutmut results`.
-
 Las pruebas de integración (`-m integracion`) requieren PostgreSQL: cree la base con `db/esquema.sql` y defina
 `GEMELO_PG_DSN` con el rol `gemelo_app`.
 
