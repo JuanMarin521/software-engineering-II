@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 import time
 from dataclasses import dataclass
-from typing import Callable, Optional, Sequence
+from typing import Callable, Sequence
 
 from gemelo.borde.buffer import BufferLocal
 from gemelo.constantes import (
@@ -88,7 +88,7 @@ class AgenteBorde:
         return self._reenviar_pendientes()
 
     def _reenviar_pendientes(self) -> bool:
-        pendientes: Optional[list[Lectura]] = self.buffer.drenar()
+        pendientes = self.buffer.drenar()
         if not pendientes:
             return True
         try:
