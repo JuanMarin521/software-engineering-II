@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+coverage.json
+htmlcov/
+reporte.xml
+*.egg-info/
+build/
+dist/
+tests/trazabilidad/matriz.csv
+mutants/
